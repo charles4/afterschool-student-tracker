@@ -338,26 +338,28 @@ def route_student_create():
 
 	if request.method == "POST":
 		if 'firstname' in request.form and 'lastname' in request.form and 'grade' in request.form:
-			guards = []
-			selfsign = "False"
-			if request.form['guardian1'] != "":
-				gid = sh.create_guardian(name=request.form['guardian1'], phone=request.form['guardian1phone'], relationship=request.form['guardian1relationship'])
-				guards.append(gid)
-			if request.form['guardian2'] != "":
-				gid = sh.create_guardian(name=request.form['guardian2'], phone=request.form['guardian2phone'], relationship=request.form['guardian2relationship'])
-				guards.append(gid)
-			if request.form['guardian3'] != "":
-				gid = sh.create_guardian(name=request.form['guardian3'], phone=request.form['guardian3phone'], relationship=request.form['guardian3relationship'])
-				guards.append(gid)
-			if request.form['guardian4'] != "":
-				gid = sh.create_guardian(name=request.form['guardian4'], phone=request.form['guardian4phone'], relationship=request.form['guardian4relationship'])
-				guards.append(gid)
+			if request.form['firstname'] != "" and request.form["lastname"] != "" and request.form["grade"] != "":
+				guards = []
+				selfsign = "False"
+				if request.form['guardian1'] != "":
+					gid = sh.create_guardian(name=request.form['guardian1'], phone=request.form['guardian1phone'], relationship=request.form['guardian1relationship'])
+					guards.append(gid)
+				if request.form['guardian2'] != "":
+					gid = sh.create_guardian(name=request.form['guardian2'], phone=request.form['guardian2phone'], relationship=request.form['guardian2relationship'])
+					guards.append(gid)
+				if request.form['guardian3'] != "":
+					gid = sh.create_guardian(name=request.form['guardian3'], phone=request.form['guardian3phone'], relationship=request.form['guardian3relationship'])
+					guards.append(gid)
+				if request.form['guardian4'] != "":
+					gid = sh.create_guardian(name=request.form['guardian4'], phone=request.form['guardian4phone'], relationship=request.form['guardian4relationship'])
+					guards.append(gid)
 
-			if request.form['self_signout'] != "":
-				selfsign = "True"
+				if 'self_signout' in request.form:
+					selfsign = "True"
 
-			sh.add(firstname=request.form["firstname"], lastname=request.form["lastname"], grade=request.form["grade"], guardians=guards, selfsign=selfsign)
-	
+				sh.add(firstname=request.form["firstname"], lastname=request.form["lastname"], grade=request.form["grade"], guardians=guards, selfsign=selfsign)
+			else:
+				return "Error. Firstname, Lastnmae, Grade are Required."
 	return render_template("addstudent.html")
 
 @app.route("/student/view/<student_id>", methods=['GET'])
