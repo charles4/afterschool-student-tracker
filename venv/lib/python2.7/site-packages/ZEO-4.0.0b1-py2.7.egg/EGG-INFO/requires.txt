@@ -1,0 +1,13 @@
+ZODB >= 4.0.0b2
+six
+transaction
+persistent
+zc.lockfile
+ZConfig
+zdaemon
+zope.interface
+
+[test]
+zope.testing
+manuel
+random2

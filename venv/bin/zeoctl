@@ -1,0 +1,9 @@
+#!/Users/charles/python/stracker/venv/bin/python
+# EASY-INSTALL-ENTRY-SCRIPT: 'ZEO==4.0.0b1','console_scripts','zeoctl'
+__requires__ = 'ZEO==4.0.0b1'
+import sys
+from pkg_resources import load_entry_point
+
+sys.exit(
+   load_entry_point('ZEO==4.0.0b1', 'console_scripts', 'zeoctl')()
+)

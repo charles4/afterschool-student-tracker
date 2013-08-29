@@ -1,0 +1,52 @@
+{% extends "master.html" %}
+
+{% block grademenu %}
+		<ul class="nav nav-tabs">
+				<li><a href="/">All</a></li>
+				<li><a href="/?grade=0">Kinder</a></td>
+				<li><a href="/?grade=1">First</a></li>
+				<li><a href="/?grade=2">Second</a></li>
+				<li><a href="/?grade=3">Third</a></li>
+				<li><a href="/?grade=4">Fourth</a></li>
+				<li><a href="/?grade=5">Fifth</a></li>
+				<li><a href="/?grade=6">Sixth</a></li>
+				<li><a href="/?grade=7">Seventh</a></li>
+				<li><a href="/?grade=8">Eighth</a></li>
+				<li><a href="/?grade=9">Nineth</a></li>
+		</ul>
+{% endblock %}
+
+{% block body %}
+{% for student in students %}
+	<table id="student{{ student.id }}" class='table'>
+		<tr class='student'>
+			<td class='stu_name'><h3>{{ student.lastname }}, {{ student.firstname }} <small><a href="/student/view/{{ student.id }}">view</a></small></h3></td>
+			<td class='btns'>
+				<select class='event_selector' studentid="{{ student.id }}">
+					<option>Sign into:</option>
+					{% for type in event_titles %}
+					<option>{{ type}}</option>
+					{% endfor %}
+				</select>
+				<select class='signout_selector' studentid="{{ student.id }}">
+						<option>Sign out to:</option>
+						{% for guardian in student.guardians %}
+						<option> {{ guardian.name }}</option>
+						{% endfor %}
+						{% if student.selfsign == "True" %}
+						<option>his/herself</option>
+						{% endif %}
+				</select>
+				<button class="bathroom_btn btn btn-default" studentid="{{ student.id }}">Bathroom</button>
+				<button class="absent_btn btn btn-default" studentid="{{ student.id }}">Mark Absent</button>
+
+			</td>
+		</tr>
+	</table>
+{% endfor %}
+{% endblock %}
+
+{% block includes %}
+	<script src="/static/jquery.1.10.2.min.js"></script>
+	<script src="/static/app.js"></script>
+{% endblock %}

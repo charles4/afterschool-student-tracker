@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>{% block title %}{%endblock%}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Bootstrap -->
+    <link href="/static/css/bootstrap.min.css" rel="stylesheet" media="screen">
+
+    <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+      <script src="../../assets/js/html5shiv.js"></script>
+      <script src="../../assets/js/respond.min.js"></script>
+    <![endif]-->
+	{% block head %}
+	{% endblock %}
+  </head>
+  <body>
+  	<div class='container'>
+	  	<div class='mainmenu'>
+			<ul class="nav nav-tabs">
+			  <li><a href="/">Home</a></li>
+			  <li><a href="/student/create">Create Student</a></li>
+			  <li><a href="/event/create">Create Event/Club</a></li>
+			  <li><a href="/signout">Log Off</a></li>
+			</ul>
+	  	</div>
+	  	{% block grademenu %}
+	  	{% endblock %}
+	  	{% block body %}
+	  	{% endblock %}
+  	</div>
+  		{% block includes %}
+  		{% endblock %}
+  </body>
+</html>
+

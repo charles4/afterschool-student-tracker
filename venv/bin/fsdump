@@ -1,0 +1,9 @@
+#!/Users/charles/python/stracker/venv/bin/python
+# EASY-INSTALL-ENTRY-SCRIPT: 'ZODB==4.0.0b3','console_scripts','fsdump'
+__requires__ = 'ZODB==4.0.0b3'
+import sys
+from pkg_resources import load_entry_point
+
+sys.exit(
+   load_entry_point('ZODB==4.0.0b3', 'console_scripts', 'fsdump')()
+)

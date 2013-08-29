@@ -1,0 +1,50 @@
+{% extends "master.html" %}
+{% block body %}
+
+<h2>{{ student.lastname }}, {{ student.firstname }} <small>[ <a href="/student/delete/{{ student.id }}">delete</a> ]</small></h2>
+<div>grade: {{ student.grade }}</div>
+<div><a href="/student/view/{{ student.id }}/documents/add">Upload Document</a></div>
+<table class='table'>
+	<tr>
+		<th>[Documents]</th>
+	</tr>
+{% for doc in documents %}
+	<tr>
+		<td><a href="/student/view/{{ student.id }}/documents/{{ doc.filename }}">{{ doc.filename }}</a></td>
+	</tr>
+{% endfor %}
+</table>
+<table class='table'>
+	<tr>
+		<th>[Name]</th>
+		<th>[Phone]</th>
+		<th>[Relationship]</th>
+	</tr>
+{% for guardian in student.guardians %}
+	<tr>
+		<td>{{guardian.name}}</td>
+		<td>{{ guardian.phone }}</td>
+		<td>{{ guardian.relationship }}</td>
+	</tr>
+{% endfor %}
+</table>
+
+<table class='table'>
+	<tr>
+		<th>[Start time]</th>
+		<th>[End time]</th>
+		<th>[Event]</th>
+		<th>[Teacher of record]</th>
+		<th>[Signed out by]</th>
+	</tr>
+{% for event in events %}
+	<tr>
+		<td>{{ event.nice_time_start }}</td>
+		<td>{{ event.nice_time_end }}</td>
+		<td>{{ event.title }}</td>
+		<td>{{ event.creator }}</td>
+		<td>{{ event.guardian }}</td>
+	</tr>
+{% endfor %}
+</table>
+{% endblock %}
