@@ -22,17 +22,17 @@ import os
 from werkzeug import secure_filename
 
 UPLOAD_FOLDER = '/tmp/uploads'
-ALLOWED_EXTENSIONS = set(['txt', 'doc', 'pdf', 'png', 'jpg', 'jpeg', 'gif'])
+ALLOWED_EXTENSIONS = set(['txt', 'doc', 'pdf', 'png', 'jpg', 'jpeg', 'gif', 'bmp'])
 
 ### db
-db = redis.StrictRedis(host='localhost', port=6379, db=0)
+db = redis.StrictRedis(host='10.1.5.12', port=6379, db=0)
 
 app = Flask(__name__)
 app.secret_key = "W\xa8\x01\x83c\t\x06\x07p\x9c\xed\x13 \x98\x17\x0f\xf9\xbe\x18\x8a|I\xf4U"
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 # The process running Flask needs write access to this directory:
-store = RedisStore(redis.StrictRedis())
+store = RedisStore(redis.StrictRedis(host='10.1.5.12', port=6379, db=1))
 
 # this will replace the app's session handling
 KVSessionExtension(store, app)
@@ -61,7 +61,7 @@ guardian:id hash
 event:list
 event:maxid
 event:id     hash
-	id title unix_time_stamp_start unix_time_stamp_end creator ip_address (guardian)
+	id title unix_time_stamp_start unix_time_stamp_end start_teacher end_teacher ip_address (guardian)
 
 event_title:list
 
@@ -233,33 +233,41 @@ class EventHandler():
 		titles = self.db.lrange("event_title:list", 0, -1)
 		return titles
 
-	def end_event(self, student_id, time_stamp):
+	def end_event(self, student_id, time_stamp, teacher):
 		### get students last event
 		last_eid = self.db.lindex("student:"+student_id+":events", -1)
 		if last_eid != None:
 			print "updating timestamp of last event."
 			print last_eid
 			### check that it's not set already
-			tmp = self.db.hget("event:"+last_eid, "unix_time_stamp_end")
-			if tmp == "":
+			if self.db.hget("event:"+last_eid, "unix_time_stamp_end") == "":
 				self.db.hset("event:"+last_eid, "unix_time_stamp_end", time_stamp)
+				self.db.hset("event:"+last_eid, "end_teacher", teacher)
 
-	def create_event(self, student_id, title, creator, ip_address="", guardian=""):
+	def create_event(self, student_id, title, ending_event, teacher, ip_address="", guardian=""):
 		time_stamp = time.time()
 
 		### end their last event
-		self.end_event(student_id=student_id, time_stamp=time_stamp)
+		self.end_event(student_id=student_id, time_stamp=time_stamp, teacher=teacher)
 
 		eid = str(self.db.incr("event:maxid"))
 
 		self.db.rpush("event:list", eid)
+
+		end_teacher = ""
+		end_time_stamp = ""
+		if ending_event == True:
+			end_teacher = teacher
+			end_time_stamp = time_stamp
+
 		self.db.hmset("event:"+eid, { 
 										"id":eid, 
 										"title":title, 
-										"creator":creator,
+										"start_teacher":teacher,
+										"end_teacher": end_teacher,
 										"ip_address":ip_address, 
 										"unix_time_stamp_start":time_stamp,
-										"unix_time_stamp_end":"",
+										"unix_time_stamp_end":end_time_stamp,
 										"guardian":guardian
 									})
 
@@ -318,9 +326,11 @@ def route_login():
 	if request.method == "POST":
 		if "username" in request.form and "password" in request.form:
 			if check_ldap_credentials(request.form["username"], request.form["password"], "10.1.5.9"):
-				session['user'] = request.form["username"]
-				return redirect(url_for("route_default"))
-				return redirect(url_for("route_login"))
+				rfuser = request.form['username']
+				if rfuser.lower() not in ['elemlab', 'group1', 'group2', 'group3', 'group4', 'group5']:
+					session['user'] = request.form["username"]
+					return redirect(url_for("route_default"))
+					return redirect(url_for("route_login"))
 
 	return render_template("login.html")
 
@@ -398,6 +408,20 @@ def route_student_delete(student_id):
 
 	return redirect(url_for("route_default"))
 
+@app.route("/student/<student_id>/guardian/create", methods=['GET', "POST"])
+@requireLogin
+def route_student_guardian_create(student_id):
+
+	if request.method == "POST":
+		sid = student_id
+		gid = sh.create_guardian(name=request.form['guardian'], phone=request.form['guardianphone'], relationship=request.form['guardianrelationship'])
+		db.rpush("student:"+sid+":guardians", gid)
+		return redirect(url_for("route_student_view", student_id=student_id))
+
+	return render_template("addguardian.html", student_id=student_id)
+
+
+
 @app.route("/event/create", methods=['GET', 'POST'])
 @requireLogin
 def route_event_create():
@@ -414,7 +438,7 @@ def route_event_signin():
 
 	if request.method == "POST":
 		if 'student_id' in request.form and 'title' in request.form:
-			eid = eh.create_event(student_id=request.form['student_id'], title=request.form['title'], creator=session['user'])
+			eid = eh.create_event(student_id=request.form['student_id'], title=request.form['title'], teacher=session['user'], ending_event=False)
 			return request.form['student_id']
 	return "Error"
 
@@ -436,7 +460,7 @@ def route_event_bathroom():
 
 	if request.method == "POST":
 		if 'student_id' in request.form and 'title' in request.form:
-			eid = eh.create_event(student_id=request.form['student_id'], title=request.form['title'], creator=session['user'])
+			eid = eh.create_event(student_id=request.form['student_id'], title=request.form['title'], teacher=session['user'], ending_event=False)
 			return request.form['student_id']
 
 	return "Error"
@@ -447,7 +471,7 @@ def route_event_absent():
 
 	if request.method == "POST":
 		if 'student_id' in request.form and 'title' in request.form:
-			eid = eh.create_event(student_id=request.form['student_id'], title=request.form['title'], creator=session['user'])
+			eid = eh.create_event(student_id=request.form['student_id'], title=request.form['title'], teacher=session['user'], ending_event=True)
 			return request.form['student_id']
 
 	return "Error."
@@ -460,7 +484,7 @@ def route_event_signout():
 		if 'student_id' in request.form and 'title' in request.form and 'guardian' in request.form:
 			if request.form['guardian'] == "":
 				return "Error."
-			eid = eh.create_event(student_id=request.form['student_id'], title=request.form['title'], creator=session['user'], guardian=request.form['guardian'])
+			eid = eh.create_event(student_id=request.form['student_id'], title=request.form['title'], teacher=session['user'], guardian=request.form['guardian'], ending_event=True)
 			return request.form['student_id']
 	return "Error."
 

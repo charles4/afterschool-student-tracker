@@ -14,6 +14,7 @@
 	</tr>
 {% endfor %}
 </table>
+<div><a href="/student/{{ student.id }}/guardian/create">Add Guardian</a></div>
 <table class='table'>
 	<tr>
 		<th>[Name]</th>
@@ -22,7 +23,7 @@
 	</tr>
 {% for guardian in student.guardians %}
 	<tr>
-		<td>{{guardian.name}}</td>
+		<td>{{ guardian.name }}</td>
 		<td>{{ guardian.phone }}</td>
 		<td>{{ guardian.relationship }}</td>
 	</tr>

@@ -3,20 +3,20 @@
 	Create Student
 {% endblock %}
 {% block body %}
-  	<form method="POST" role="form">
+  	<form method="POST" role="form" action='/student/create'>
   	<legend><h3>Create a student</h3></legend>
   	<span class="help-block">Lastname, Firstname and Grade are required.</span>
   	<div class='form-group'>
 		<label for="lastname">Lastname:</label>
-		<input name='lastname' type="text" class="form-control" required></input>
+		<input name='lastname' type="text" class="form-control" required>
 	</div>
 	<div class='form-group'>
 		<label for="firstname">Firstname:</label>
-		<input name="firstname" type='text' class="form-control" required></input>
+		<input name="firstname" type='text' class="form-control" required>
 	</div>
 	<div class='form-group'>
 		<label for="grade">Grade (numeric 0-9):</label>
-		<input name='grade' type="text" class="form-control" required></input>
+		<input name='grade' type="text" class="form-control" required>
 	</div>
 
 	<br>
@@ -24,60 +24,60 @@
 	<span class="help-block">The guardian information is optional.</span>
 	<div class='form-group'>
 		<label for="guardian1">Name:</label>
-		<input name="guardian1" type="text" class="form-control"></input>
+		<input name="guardian1" type="text" class="form-control">
 	</div>
 	<div class='form-group'>
 		<label for="guardian1phone">Phone #</label>
-		<input name="guardian1phone" type='tel' class="form-control"></input>
+		<input name="guardian1phone" type='tel' class="form-control">
 	</div>
 	<div class='form-group'>
 		<label for='guardian1relationship'>Relationship</label>
-		<input name="guardian1relationship" type='text' class="form-control"></input>
+		<input name="guardian1relationship" type='text' class="form-control">
 	</div>
 
 	<br>
 	<legend>Guardian 2:</legend>
 	<div class='form-group'>
 		<label for="guardian2">Name:</label>
-		<input name="guardian2" type="text" class="form-control"></input>
+		<input name="guardian2" type="text" class="form-control">
 	</div>
 	<div class='form-group'>
 		<label for="guardian2phone">Phone #</label>
-		<input name="guardian2phone" type='tel' class="form-control"></input>
+		<input name="guardian2phone" type='tel' class="form-control">
 	</div>
 	<div class='form-group'>
 		<label for='guardian2relationship'>Relationship</label>
-		<input name="guardian2relationship" type='text' class="form-control"></input>
+		<input name="guardian2relationship" type='text' class="form-control">
 	</div>
 
 	<br>
 	<legend>Guardian 3:</legend>
 	<div class='form-group'>
 		<label for="guardian3">Name:</label>
-		<input name="guardian3" type="text" class="form-control"></input>
+		<input name="guardian3" type="text" class="form-control">
 	</div>
 	<div class='form-group'>
 		<label for="guardian3phone">Phone #</label>
-		<input name="guardian3phone" type='tel' class="form-control"></input>
+		<input name="guardian3phone" type='tel' class="form-control">
 	</div>
 	<div class='form-group'>
 		<label for='guardian3relationship'>Relationship</label>
-		<input name="guardian3relationship" type='text' class="form-control"></input>
+		<input name="guardian3relationship" type='text' class="form-control">
 	</div>
 
 	<br>
 	<legend>Guardian 4:</legend>
 	<div class='form-group'>
 		<label for="guardian4">Name:</label>
-		<input name="guardian4" type="text" class="form-control"></input>
+		<input name="guardian4" type="text" class="form-control">
 	</div>
 	<div class='form-group'>
 		<label for="guardian4phone">Phone #</label>
-		<input name="guardian4phone" type='tel' class="form-control"></input>
+		<input name="guardian4phone" type='tel' class="form-control">
 	</div>
 	<div class='form-group'>
 		<label for='guardian4relationship'>Relationship</label>
-		<input name="guardian4relationship" type='text' class="form-control"></input>
+		<input name="guardian4relationship" type='text' class="form-control">
 	</div>
 	<br><br>
 	<div class='form-group'>
