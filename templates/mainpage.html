@@ -25,8 +25,9 @@
 		<tr class='student'>
 			<td class='stu_name'><h3>{{ student.lastname }}, {{ student.firstname }}</h3></td>
 		</tr>
+	</table>
+	<table>
 		<tr>
-			<td><a href="/student/view/{{ student.id }}"><button class='btn btn-default'>View</button></a></td>
 			<td class='btns'>
 				<select class='event_selector' studentid="{{ student.id }}">
 					<option>Sign into:</option>
@@ -51,6 +52,9 @@
 			</td>
 			<td>
 				<button class="absent_btn btn btn-default" studentid="{{ student.id }}">Mark Absent</button>
+			</td>
+			<td>
+				<a href="/student/view/{{ student.id }}"><button class='btn btn-default'>View</button></a>
 			</td>
 		</tr>
 	</table>
