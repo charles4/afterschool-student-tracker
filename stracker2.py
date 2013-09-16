@@ -109,7 +109,11 @@ class StudentHandler():
 	def delete(self, student_id):
 		sid=student_id
 		self.db.rename("student:"+sid, "deleted:student:"+sid)
-		self.db.rename("student:"+sid+":documents", "deleted:student:"+sid+":documents")
+		try:
+			self.db.rename("student:"+sid+":documents", "deleted:student:"+sid+":documents")
+		except ResponseError:
+			print "error renaming students:"+sid+":documents    key not found."
+			
 		self.db.rename("student:"+sid+":guardians", "deleted:student:"+sid+":guardians")
 		self.db.rename("student:"+sid+":events", "deleted:student:"+sid+":events")
 		self.db.rename("student:"+sid+":selfsign", "deleted:student:"+sid+":selfsign")
@@ -318,6 +322,7 @@ def route_default():
 	else:
 		students = sh.get_all()
 
+	students = sorted(students, key= lambda k:k['lastname'])
 
 	return render_template("mainpage.html", students=students, event_titles=event_titles)
 
@@ -495,4 +500,4 @@ if __name__ == "__main__":
 	#presets()
 
 	app.debug = True
-	app.run()
+	app.run(host='0.0.0.0')

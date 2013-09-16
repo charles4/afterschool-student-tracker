@@ -39,24 +39,21 @@ function update_event_list(sid){
 		var table = $("#student"+sid+" tr:last")
 		for (var i in data){
 			tmp = ""
+			localstarttime = convert_unix_to_local(data[i].unix_time_stamp_start)
+			localendtime = convert_unix_to_local(data[i].unix_time_stamp_end)
+
 			if (data[i].title == "Absent"){
-				localstarttime = convert_unix_to_local(data[i].unix_time_stamp_start)
 				tmp += "<tr class='event' eventid='" + data[i].id +"'><td>" + localstarttime + " marked <b>" + data[i].title + "</b> [ " + data[i].start_teacher + " ] </td></tr>"
 			}else if(data[i].title == "Signout"){
-				localstarttime = convert_unix_to_local(data[i].unix_time_stamp_start)
 				tmp += "<tr class='event' eventid='" + data[i].id +"'><td>" + localstarttime + " Signed out for the day by <b>" + data[i].guardian + "</b> [ " + data[i].end_teacher + " ] </td></tr>"
 			}else if(data[i].title == "Restroom"){
-				localstarttime = convert_unix_to_local(data[i].unix_time_stamp_start)
 				tmp += "<tr class='event' eventid='" + data[i].id +"'><td>" + localstarttime + " went to the " + data[i].title + " [ " + data[i].start_teacher + " ] </td></tr>"
 				if (data[i].unix_time_stamp_end){
-					localendtime = convert_unix_to_local(data[i].unix_time_stamp_end)
 					tmp += "<tr class='event' eventid='" + data[i].id +"'><td>" + localendtime + " returned from the " + data[i].title + " [ " + data[i].end_teacher + " ] </td></tr>"
 				}
 			}else{
-				localstarttime = convert_unix_to_local(data[i].unix_time_stamp_start)
 				tmp += "<tr class='event' eventid='" + data[i].id +"'><td>" + localstarttime + " checked <b>into</b> " + data[i].title + " [ " + data[i].start_teacher + " ] </td></tr>"
 				if (data[i].unix_time_stamp_end){
-					localendtime = convert_unix_to_local(data[i].unix_time_stamp_end)
 					tmp += "<tr class='event' eventid='" + data[i].id +"'><td>" + localendtime + " checked <b>out</b> from " + data[i].title + " [ " + data[i].end_teacher + " ] </td></tr>"
 				}
 			}
