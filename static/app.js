@@ -39,7 +39,6 @@ function update_event_list(sid){
 		var table = $("#student"+sid+" tr:last")
 		for (var i in data){
 			tmp = ""
-			console.log(data[i])
 			if (data[i].title == "Absent"){
 				localstarttime = convert_unix_to_local(data[i].unix_time_stamp_start)
 				tmp += "<tr class='event' eventid='" + data[i].id +"'><td>" + localstarttime + " marked <b>" + data[i].title + "</b> [ " + data[i].start_teacher + " ] </td></tr>"
@@ -139,7 +138,6 @@ $(document).ready(function(){
 	var intervalID = window.setInterval(function(){
 		// retrieve event info for each student
 		$( ".event_selector" ).each(function( index ){
-			console.log("updating...");
 			var sid = $(this).attr('studentid')
 			update_event_list(sid)
 		});
