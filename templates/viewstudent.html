@@ -32,18 +32,16 @@
 
 <table class='table'>
 	<tr>
+		<th>[Event]</th>
 		<th>[Start time]</th>
 		<th>[End time]</th>
-		<th>[Event]</th>
-		<th>[Teacher of record]</th>
 		<th>[Signed out by]</th>
 	</tr>
 {% for event in events %}
 	<tr>
-		<td>{{ event.nice_time_start }}</td>
-		<td>{{ event.nice_time_end }}</td>
 		<td>{{ event.title }}</td>
-		<td>{{ event.creator }}</td>
+		<td>{{ event.nice_time_start }} by {{ event.start_teacher }}</td>
+		<td>{{ event.nice_time_end }} by {{ event.end_teacher }}</td>
 		<td>{{ event.guardian }}</td>
 	</tr>
 {% endfor %}
