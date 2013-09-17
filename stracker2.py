@@ -396,7 +396,11 @@ def route_student_view_documents_add(student_id):
 			filename = secure_filename(file.filename)
 			file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
 			fh.save_file_to_db(filename=filename, filepath=app.config['UPLOAD_FOLDER'], student_id=student_id)
+			flash(""" %s uploaded successfully.""" % (file.filename))
 			return redirect(url_for("route_student_view", student_id=student_id))
+
+		else:
+			flash("Error uploading file.")
 
 	return render_template("add_document.html")
 
