@@ -397,6 +397,11 @@ def route_student_view_documents_add(student_id):
 			file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
 			fh.save_file_to_db(filename=filename, filepath=app.config['UPLOAD_FOLDER'], student_id=student_id)
 			return redirect(url_for("route_student_view", student_id=student_id))
+		else:
+			f = open("/tmp/stracker_file_errors.log")
+			tmp = "%s : File not in POST request or filetype not allowed." % (str(time.time()))
+			f.write(tmp)
+			f.close()
 	return render_template("add_document.html")
 
 @app.route('/student/view/<student_id>/documents/<filename>')
