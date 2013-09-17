@@ -19,9 +19,16 @@ function convert_unix_to_local(unix_timestamp){
 	var seconds = date.getSeconds();
 
 
-	// will display time in 10:30:23 format
-	var formattedTime = month + '/' + day + '/' + year + "    <b>" + hours + ':' + minutes + '</b>';
+	var current_time = new Date().getTime();
 
+	// 300000 is hopefully 5 minutes in milliseconds
+	if (current_time - date.getTime() < 300000){
+		var formattedTime = "<span class='recent_event'>" + month + '/' + day + '/' + year + "    <b>" + hours + ':' + minutes + '</b></span>';
+	}else{
+		// will display time in 10:30:23 format
+		var formattedTime = month + '/' + day + '/' + year + "    <b>" + hours + ':' + minutes + '</b>';
+	}
+	
 	return formattedTime
 }
 

@@ -18,7 +18,9 @@
 
 {% block body %}
 <style>
-	
+	.recent_event { 
+		color:red;
+	}
 </style>
 {% for student in students %}
 	<table>
@@ -41,7 +43,7 @@
 						<option>Sign out to:</option>
 						{% for guardian in student.guardians %}
 						<option> {{ guardian.name }}</option>
-						{% endfor %}
+						{% endfor %}	
 						{% if student.selfsign == "True" %}
 						<option>his/herself</option>
 						{% endif %}

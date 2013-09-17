@@ -373,8 +373,9 @@ def route_student_create():
 					selfsign = "True"
 
 				sh.add(firstname=request.form["firstname"], lastname=request.form["lastname"], grade=request.form["grade"], guardians=guards, selfsign=selfsign)
+				flash("%s, %s was added successfully." % (request.form['lastname'], request.form['firstname']))
 			else:
-				return "Error. Firstname, Lastnmae, Grade are Required."
+				flash("Error. Firstname, Lastname, Grade are Required.")
 	return render_template("addstudent.html")
 
 @app.route("/student/view/<student_id>", methods=['GET'])
@@ -426,6 +427,7 @@ def route_student_guardian_create(student_id):
 		sid = student_id
 		gid = sh.create_guardian(name=request.form['guardian'], phone=request.form['guardianphone'], relationship=request.form['guardianrelationship'])
 		db.rpush("student:"+sid+":guardians", gid)
+		flash("Guardian '%s' was added." % (request.form['guardian']))
 		return redirect(url_for("route_student_view", student_id=student_id))
 
 	return render_template("addguardian.html", student_id=student_id)
@@ -439,6 +441,7 @@ def route_event_create():
 	if request.method == "POST":
 		if 'event_type' in request.form:
 			eh.create_title(title=request.form['event_type'])
+			flash("Event '%s' was created." % (request.form['event_type']))
 
 	return render_template("addevent.html")
 
