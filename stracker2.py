@@ -21,7 +21,7 @@ import datetime
 import os
 from werkzeug import secure_filename
 
-UPLOAD_FOLDER = '/tmp/uploads'
+UPLOAD_FOLDER = '/srv/uploads'
 ALLOWED_EXTENSIONS = set(['txt', 'doc', 'pdf', 'png', 'jpg', 'jpeg', 'gif', 'bmp'])
 
 ### db
