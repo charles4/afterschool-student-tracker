@@ -21,11 +21,17 @@
 	.recent_event { 
 		color:red;
 	}
+	.afterschoolbox{
+		border: solid black 1px;
+	}
 </style>
 {% for student in students %}
 	<table>
 		<tr class='student'>
-			<td class='stu_name'><h3>{{ student.lastname }}, {{ student.firstname }}</h3></td>
+			<td class='stu_name'><h3><a href='/student/view/{{ student.id }}'>{{ student.lastname }}, {{ student.firstname }}</a></h3></td>
+			{% if student.type == "afterschool" %}
+				<td>[Afterschool pgrm]</td>
+			{% endif %}
 		</tr>
 	</table>
 	<table>
@@ -33,20 +39,10 @@
 			<td class='btns'>
 				<select class='event_selector' studentid="{{ student.id }}">
 					<option>Sign into:</option>
+					<option>Afterschool</option>
 					{% for type in event_titles %}
 					<option>{{ type}}</option>
 					{% endfor %}
-				</select>
-			</td>
-			<td>
-				<select class='signout_selector' studentid="{{ student.id }}">
-						<option>Sign out to:</option>
-						{% for guardian in student.guardians %}
-						<option> {{ guardian.name }}</option>
-						{% endfor %}	
-						{% if student.selfsign == "True" %}
-						<option>his/herself</option>
-						{% endif %}
 				</select>
 			</td>
 			<td>
@@ -56,8 +52,23 @@
 				<button class="absent_btn btn btn-default" studentid="{{ student.id }}">Mark Absent</button>
 			</td>
 			<td>
-				<a href="/student/view/{{ student.id }}">[ Manage Student ]</a>
+				<button class="signout_btn btn btn-default" studentid="{{ student.id }}">Signout</button>
 			</td>
+			{% if student.type == "afterschool" %}
+
+				<td>
+					<select class='signout_selector' studentid="{{ student.id }}">
+							<option>Sign out from Afterschool to:</option>
+							{% for guardian in student.guardians %}
+							<option> {{ guardian.name }}</option>
+							{% endfor %}	
+							{% if student.selfsign == "True" %}
+							<option>his/herself</option>
+							{% endif %}
+					</select>
+				</td>
+
+			{% endif %}
 		</tr>
 	</table>
 	<table id="student{{ student.id }}">

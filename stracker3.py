@@ -25,13 +25,12 @@ UPLOAD_FOLDER = '/srv/uploads'
 ALLOWED_EXTENSIONS = set(['txt', 'doc', 'pdf', 'png', 'jpg', 'jpeg', 'gif', 'bmp'])
 
 ### db
-db = redis.StrictRedis(host='10.1.5.12', port=6379, db=0)
+db = redis.StrictRedis(host='10.1.5.12', port=6379, db=3)
 
 app = Flask(__name__)
 app.secret_key = "W\xa8\x01\x83c\t\x06\x07p\x9c\xed\x13 \x98\x17\x0f\xf9\xbe\x18\x8a|I\xf4U"
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
-# The process running Flask needs write access to this directory:
 store = RedisStore(redis.StrictRedis(host='10.1.5.12', port=6379, db=1))
 
 # this will replace the app's session handling
@@ -46,10 +45,12 @@ REDIS DB SCHEMA
 student:list     list   (of ids)
 student:maxid
 student:id    hash
-	id firstname lastname grade selfsign(true/false)
+	id type(afterschool/normal) firstname lastname grade selfsign(true/false)
 student:id:events     list   (of event ids)
 student:id:documents    list   (of document ids)
 student:id:guardians    list   (of ids)
+student:id:current_event    nameofevent
+student:id:signed_into_afterschool true/false
 
 deleted:student:list   list (of deleted ids)
 
@@ -61,7 +62,7 @@ guardian:id hash
 event:list
 event:maxid
 event:id     hash
-	id title unix_time_stamp_start unix_time_stamp_end start_teacher end_teacher ip_address (guardian)
+	id type title unix_time_stamp author ip_address sister_event (guardian)
 
 event_title:list
 
@@ -92,15 +93,16 @@ class StudentHandler():
 	def __init__(self, db):
 		self.db = db
 
-	def add(self, firstname, lastname, grade, selfsign=False, guardians=[]):
+	def add(self, student_type, firstname, lastname, grade, selfsign=False, guardians=[]):
 		firstname = firstname.strip(" ")
 		lastname = lastname.strip(" ")
 		grade = grade.strip(" ")
 
 		sid = str(self.db.incr("student:maxid"))
 		self.db.rpush("student:list", sid)
-		self.db.hmset("student:"+sid, { "id":sid, "firstname":firstname, "lastname":lastname, "grade":grade, "selfsign":selfsign })
-
+		self.db.hmset("student:"+sid, { "id":sid, "type":student_type,"firstname":firstname, "lastname":lastname, "grade":grade, "selfsign":selfsign })
+		self.db.set("student:"+sid+":signed_into_afterschool", "False")
+		self.db.set("student:"+sid+":current_event", "NO_CURRENT_EVENT")
 		for guardian in guardians:
 			self.db.rpush("student:"+sid+":guardians", guardian)
 
@@ -192,14 +194,11 @@ class StudentHandler():
 		for eid in eids:
 			event = self.db.hgetall("event:"+eid)
 			start_time = ""
-			end_time = ""
-			if event['unix_time_stamp_start'] != "":
-				start_time = time.ctime(float(event['unix_time_stamp_start']))
-			if event['unix_time_stamp_end'] != "":
-				end_time = time.ctime(float(event['unix_time_stamp_end']))
-			event['nice_time_start'] = start_time
-			event['nice_time_end'] = end_time
-			events.append(event)
+			if 'unix_time_stamp' in event:
+				if event['unix_time_stamp'] != "":
+					start_time = time.ctime(float(event['unix_time_stamp']))
+					event['nice_time'] = start_time
+					events.append(event)
 
 		return events
 
@@ -208,10 +207,11 @@ class StudentHandler():
 		events = []
 		for eid in eids:
 			event = self.db.hgetall("event:"+eid)
-			date = datetime.datetime.fromtimestamp(float(event["unix_time_stamp_start"]))
-			today = datetime.datetime.fromtimestamp(time.time())
-			if date.year == today.year and date.month == today.month and date.day == today.day:
-				events.append(event)
+			if "unix_time_stamp" in event:
+				date = datetime.datetime.fromtimestamp(float(event["unix_time_stamp"]))
+				today = datetime.datetime.fromtimestamp(time.time())
+				if date.year == today.year and date.month == today.month and date.day == today.day:
+					events.append(event)
 
 		return events
 
@@ -222,6 +222,32 @@ class StudentHandler():
 			docs.append(self.db.hgetall("document:"+fid))
 
 		return docs
+
+	def current_event(self, student_id):
+		return self.db.get("student:"+student_id+":current_event")
+
+	def count_general(self):
+
+		ids = self.db.lrange("student:list", 0, -1)
+		signed_in_students = []
+		for id in ids:
+			event = self.current_event(id)
+			if event != "NO_CURRENT_EVENT":
+				signed_in_students.append(id)
+
+		return len(signed_in_students)
+
+
+	def count_afterschool(self):
+
+		ids = self.db.lrange("student:list", 0, -1)
+		signed_in_students = []
+		for id in ids:
+			status = self.db.get("student:"+id+":signed_into_afterschool")
+			if status == "True":
+				signed_in_students.append(id)
+
+		return len(signed_in_students)
 
 
 class EventHandler():
@@ -237,42 +263,56 @@ class EventHandler():
 		titles = self.db.lrange("event_title:list", 0, -1)
 		return titles
 
-	def end_event(self, student_id, time_stamp, teacher):
-		### get students last event
-		last_eid = self.db.lindex("student:"+student_id+":events", -1)
-		if last_eid != None:
-			print "updating timestamp of last event."
-			print last_eid
-			### check that it's not set already
-			if self.db.hget("event:"+last_eid, "unix_time_stamp_end") == "":
-				self.db.hset("event:"+last_eid, "unix_time_stamp_end", time_stamp)
-				self.db.hset("event:"+last_eid, "end_teacher", teacher)
+	def remove_title(self, title):
+		return self.db.lrem("event_title:list", 0, title)
 
-	def create_event(self, student_id, title, ending_event, teacher, ip_address="", guardian=""):
+	def get_todays_events(self, student_id):
+		eids = self.db.lrange("student:"+student_id+":events", 0, -1)
+		events = []
+		for eid in eids:
+			event = self.db.hgetall("event:"+eid)
+			if "unix_time_stamp" in event:
+				date = datetime.datetime.fromtimestamp(float(event["unix_time_stamp"]))
+				today = datetime.datetime.fromtimestamp(time.time())
+				if date.year == today.year and date.month == today.month and date.day == today.day:
+					events.append(event)
+
+		return events
+
+	def create_event(self, student_id, event_type, title, author, ip_address="", guardian=""):
 		time_stamp = time.time()
-
-		### end their last event
-		self.end_event(student_id=student_id, time_stamp=time_stamp, teacher=teacher)
 
 		eid = str(self.db.incr("event:maxid"))
 
 		self.db.rpush("event:list", eid)
 
-		end_teacher = ""
-		end_time_stamp = ""
-		if ending_event == True:
-			end_teacher = teacher
-			end_time_stamp = time_stamp
+		if event_type == "end":
+			sister_event = self.db.lrange("student:"+student_id+":events", -1, -2)
+			### if student in afterschool, reset current event to afterschool
+			if self.db.get('student:'+student_id+':signed_into_afterschool') == "True":
+				self.db.set('student:'+student_id+':current_event', 'Afterschool')
+			else:
+				self.db.set("student:"+student_id+":current_event", "NO_CURRENT_EVENT")
+		elif event_type == "ASend":
+			events = self.get_todays_events(student_id)
+			sister_event = ""
+			for event in events:
+				if event['type'] == "ASstart":
+					sister_event = event['id']
+
+		else:
+			sister_event = ""
+			self.db.set("student:"+student_id+":current_event", title)
 
 		self.db.hmset("event:"+eid, { 
-										"id":eid, 
+										"id":eid,
+										"type":event_type,
 										"title":title, 
-										"start_teacher":teacher,
-										"end_teacher": end_teacher,
+										"author":author,
 										"ip_address":ip_address, 
-										"unix_time_stamp_start":time_stamp,
-										"unix_time_stamp_end":end_time_stamp,
-										"guardian":guardian
+										"unix_time_stamp": time_stamp,
+										"guardian":guardian,
+										"sister_event": sister_event
 									})
 
 		self.db.rpush("student:"+student_id+":events", eid)
@@ -319,6 +359,21 @@ def route_default():
 
 	if 'grade' in request.args:
 		students = sh.get_grade(request.args.get("grade"))
+	elif 'term' in request.args:
+		students = sh.get_all()
+		matches = []
+		for student in students:
+			terms = request.args.get('term')
+			terms = terms.split(" ")
+			print terms
+
+			for term in terms:
+				if student['lastname'].lower() == term:
+					matches.append(student)
+				if student['firstname'].lower() == term:
+					matches.append(student)
+
+		students = matches
 	else:
 		students = sh.get_all()
 
@@ -356,6 +411,7 @@ def route_student_create():
 			if request.form['firstname'] != "" and request.form["lastname"] != "" and request.form["grade"] != "":
 				guards = []
 				selfsign = "False"
+				student_type = "normal"
 				if request.form['guardian1'] != "":
 					gid = sh.create_guardian(name=request.form['guardian1'], phone=request.form['guardian1phone'], relationship=request.form['guardian1relationship'])
 					guards.append(gid)
@@ -372,7 +428,16 @@ def route_student_create():
 				if 'self_signout' in request.form:
 					selfsign = "True"
 
-				sh.add(firstname=request.form["firstname"], lastname=request.form["lastname"], grade=request.form["grade"], guardians=guards, selfsign=selfsign)
+				if 'afterschoolstudent' in request.form:
+					student_type = "afterschool"
+
+				sh.add(firstname=request.form["firstname"], 
+					student_type=student_type, 
+					lastname=request.form["lastname"], 
+					grade=request.form["grade"], 
+					guardians=guards, 
+					selfsign=selfsign)
+
 				flash("%s, %s was added successfully." % (request.form['lastname'], request.form['firstname']))
 			else:
 				flash("Error. Firstname, Lastname, Grade are Required.")
@@ -386,6 +451,26 @@ def route_student_view(student_id):
 	documents = sh.get_files(student_id)
 
 	return render_template("viewstudent.html", student=student, events=events, documents=documents)
+
+@app.route("/student/view/<student_id>/update", methods=['POST'])
+@requireLogin
+def route_student_view_update(student_id):
+
+	if 'self_signout' in request.form:
+		db.hset("student:"+student_id, "selfsign", "True")
+		flash("Updated to allow self signing.")
+	else:
+		db.hset("student:"+student_id, "selfsign", "False")
+		flash("Updated to disallow self signing.")
+
+	if 'afterschoolstudent' in request.form:
+		db.hset("student:"+student_id, "type", "afterschool")
+		flash("Added student to afterschool program.")
+	else:
+		flash("Removed student from afterschool program.")
+		db.hset("student:"+student_id, "type", "normal")
+
+	return redirect(url_for("route_student_view", student_id=student_id))
 
 @app.route("/student/view/<student_id>/documents/add", methods=['GET','POST'])
 @requireLogin
@@ -434,16 +519,26 @@ def route_student_guardian_create(student_id):
 
 
 
-@app.route("/event/create", methods=['GET', 'POST'])
+@app.route("/event/manage", methods=['GET', 'POST'])
 @requireLogin
-def route_event_create():
+def route_event_manage():
 
 	if request.method == "POST":
 		if 'event_type' in request.form:
 			eh.create_title(title=request.form['event_type'])
 			flash("Event '%s' was created." % (request.form['event_type']))
 
-	return render_template("addevent.html")
+	titles = eh.get_all_titles()		
+	print titles
+	return render_template("manage_events.html", titles=titles)
+
+@app.route("/event/delete/<title>", methods=['GET', 'POST'])
+@requireLogin
+def route_event_delete(title):
+
+	eh.remove_title(title)
+
+	return redirect(url_for("route_event_manage"))
 
 @app.route("/event/signin", methods=['GET', 'POST'])
 @requireLogin
@@ -451,7 +546,18 @@ def route_event_signin():
 
 	if request.method == "POST":
 		if 'student_id' in request.form and 'title' in request.form:
-			eid = eh.create_event(student_id=request.form['student_id'], title=request.form['title'], teacher=session['user'], ending_event=False)
+			if request.form['title'] == 'Afterschool':
+				eid = eh.create_event(student_id=request.form['student_id'], event_type="ASstart", title="Afterschool", author=session['user'], ip_address=request.remote_addr)
+				db.set("student:"+sid+":signed_into_afterschool", "True")
+			else:
+				### check if student is part of afterschool prgm
+				### if they are auto sign into the afterschool first
+				sid = request.form['student_id']
+				if db.hget("student:"+sid, "type") == "afterschool" and db.get("student:"+sid+":signed_into_afterschool") == "False":
+					eid = eh.create_event(student_id=request.form['student_id'], event_type="ASstart", title="Afterschool", author=session['user'], ip_address=request.remote_addr)
+					db.set("student:"+sid+":signed_into_afterschool", "True")
+				eid = eh.create_event(student_id=request.form['student_id'], event_type="start", title=request.form['title'], author=session['user'], ip_address=request.remote_addr)
+			
 			return request.form['student_id']
 	return "Error"
 
@@ -462,7 +568,7 @@ def route_event_update():
 	if 'student_id' in request.args:
 		sid = request.args.get("student_id")
 		events = sh.get_todays_events(student_id=sid)
-		events = sorted(events, key=lambda k: k['unix_time_stamp_start'], reverse=True)
+		events = sorted(events, key=lambda k: k['unix_time_stamp'])
 		return str(json.dumps(events))
 
 	return "Error"
@@ -473,7 +579,7 @@ def route_event_bathroom():
 
 	if request.method == "POST":
 		if 'student_id' in request.form and 'title' in request.form:
-			eid = eh.create_event(student_id=request.form['student_id'], title=request.form['title'], teacher=session['user'], ending_event=False)
+			eid = eh.create_event(student_id=request.form['student_id'], event_type="start", title="Restroom", author=session['user'], ip_address=request.remote_addr)
 			return request.form['student_id']
 
 	return "Error"
@@ -484,8 +590,7 @@ def route_event_absent():
 
 	if request.method == "POST":
 		if 'student_id' in request.form and 'title' in request.form:
-			eid = eh.create_event(student_id=request.form['student_id'], title=request.form['title'], teacher=session['user'], ending_event=True)
-			return request.form['student_id']
+			eid = eh.create_event(student_id=request.form['student_id'], event_type='start', title="Absent", author=session['user'], ip_address=request.remote_addr)
 
 	return "Error."
 
@@ -494,28 +599,56 @@ def route_event_absent():
 def route_event_signout():
 
 	if request.method == "POST":
-		if 'student_id' in request.form and 'title' in request.form and 'guardian' in request.form:
-			if request.form['guardian'] == "":
-				return "Error."
-			eid = eh.create_event(student_id=request.form['student_id'], title=request.form['title'], teacher=session['user'], guardian=request.form['guardian'], ending_event=True)
-			return request.form['student_id']
+		if 'student_id' in request.form and 'title' in request.form:
+			if sh.current_event(request.form['student_id']) != "NO_CURRENT_EVENT":
+				current_event = sh.current_event(request.form['student_id'])
+				eid = eh.create_event(
+								student_id=request.form['student_id'], 
+								event_type="end", title=current_event, 
+								author=session['user'], 
+								ip_address=request.remote_addr)
+				return request.form['student_id']
+			else:
+				return "Error. Student not signed into anything."
 	return "Error."
 
-@app.route("/event/afterschool", methods=['GET', "POST"])
+@app.route("/event/afterschoolsignout", methods=['GET', 'POST'])
 @requireLogin
-def route_event_afterschool():
-
+def route_event_afterschoolsignout():
 	if request.method == "POST":
-		if "student_id" in request.form and 'title' in request.form:
-			eid = eh.create_event(student_id=request.form['student_id'], title=request.form['title'], teacher=session['user'], ending_event=True)
-			return request.form['student_id']
+		if 'student_id' in request.form and 'title' in request.form and 'guardian' in request.form:
+			db.set("student:"+request.form['student_id']+":signed_into_afterschool", "False")
+			db.set("student:"+request.form['student_id']+":current_event", "NO_CURRENT_EVENT")
+			eid = eh.create_event(
+					student_id=request.form['student_id'], 
+					event_type="ASend", 
+					title="Afterschool", 
+					author=session['user'], 
+					guardian=request.form['guardian'], 
+					ip_address=request.remote_addr)
 
+			return request.form['student_id']
 	return "Error."
 
+@app.route("/status", methods=['GET'])
+@requireLogin
+def route_status():
 
+	dct = {}
+	dct['count_general'] = sh.count_general()
+	dct['count_afterschool'] = sh.count_afterschool()
+
+	return json.dumps(dct)
 
 if __name__ == "__main__":
 	#presets()
 
 	app.debug = True
 	app.run(host='0.0.0.0')
+
+
+
+
+
+
+

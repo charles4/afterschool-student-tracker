@@ -1,0 +1,7 @@
+x change way afterschool checkin is handled
+x add running counts of students tracked and students in afterschool
+x change way afterschool vs normal kids are handled.
+x need to mark they're in afterschool.
+x add search
+add delete files, delete events, delete guardians
+add midnight sign everyone out reset

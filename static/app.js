@@ -45,31 +45,35 @@ function update_event_list(sid){
 
 		var table = $("#student"+sid+" tr:last")
 		for (var i in data){
-			tmp = ""
-			localstarttime = convert_unix_to_local(data[i].unix_time_stamp_start)
-			localendtime = convert_unix_to_local(data[i].unix_time_stamp_end)
-
-			if (data[i].title == "Absent"){
-				tmp += "<tr class='event' eventid='" + data[i].id +"'><td>" + localstarttime + " marked <b>" + data[i].title + "</b> [ " + data[i].start_teacher + " ] </td></tr>"
-			}else if(data[i].title == "Signout"){
-				tmp += "<tr class='event' eventid='" + data[i].id +"'><td>" + localstarttime + " Signed out for the day by <b>" + data[i].guardian + "</b> [ " + data[i].end_teacher + " ] </td></tr>"
-			}else if(data[i].title == "Restroom"){
-				tmp += "<tr class='event' eventid='" + data[i].id +"'><td>" + localstarttime + " went to the " + data[i].title + " [ " + data[i].start_teacher + " ] </td></tr>"
-				if (data[i].unix_time_stamp_end){
-					tmp += "<tr class='event' eventid='" + data[i].id +"'><td>" + localendtime + " returned from the " + data[i].title + " [ " + data[i].end_teacher + " ] </td></tr>"
-				}
+			time = convert_unix_to_local(data[i].unix_time_stamp)
+			title = data[i].title
+			type = ""
+			author = data[i].author
+			ip = data[i].ip_address
+			if (data[i].type == "start" || data[i].type == "ASstart"){
+				type = "Signed into"
 			}else{
-				tmp += "<tr class='event' eventid='" + data[i].id +"'><td>" + localstarttime + " checked <b>into</b> " + data[i].title + " [ " + data[i].start_teacher + " ] </td></tr>"
-				if (data[i].unix_time_stamp_end){
-					tmp += "<tr class='event' eventid='" + data[i].id +"'><td>" + localendtime + " checked <b>out</b> from " + data[i].title + " [ " + data[i].end_teacher + " ] </td></tr>"
-				}
+				type = "Signed out from"
 			}
-			$(table).after(tmp)
-
+			tmp = "<tr class='event'><td>" + time + " : " + type + " " + title + " by " + author + "</td></tr>"
+			$(table).append(tmp)
 
 		}
 	});
 
+}
+
+function update_counts(){
+	$.get("/status")
+	.done(function(data){
+		 data = jQuery.parseJSON( data );
+
+		 console.log(data.count_general);
+		 console.log(data.count_afterschool)
+
+		 $('#count_general').html(data.count_general);
+		 $('#count_afterschool').html(data.count_afterschool);
+	});
 }
 
 function event_select_callback(ev){
@@ -86,7 +90,7 @@ function signout_select_callback(ev){
 	guardian = $(ev.data.param1).val()
 	sid = $(ev.data.param1).attr("studentid")
 
-	$.post("/event/signout", { title: "Signout", student_id: sid, guardian: guardian })
+	$.post("/event/afterschoolsignout", { title: "Signout", student_id: sid, guardian: guardian })
 	.done({ param1: sid }, update_event_list)
 }
 
@@ -104,10 +108,24 @@ function absent_click_callback(ev){
 	.done({ param1: sid }, update_event_list)
 }
 
+function signout_btn_callback(ev){
+	sid = $(ev.data.param1).attr("studentid")
+
+	$.post("/event/signout", { title: "Signout", student_id: sid })
+	.done({ param1: sid }, update_event_list)
+}
+
 function signout_click_callback(ev){
 	sid = $(ev.data.param1).attr("studentid")
 
 	$.post("/event/signout", { title: "Signout", student_id: sid })
+	.done({ param1: sid }, update_event_list)
+}
+
+function afterschool_click_callback(ev){
+	sid = $(ev.data.param1).attr("studentid")
+
+	$.post("/event/afterschool", { title: "Afterschool", student_id: sid })
 	.done({ param1: sid }, update_event_list)
 }
 
@@ -119,8 +137,12 @@ $(document).ready(function(){
 		$(this).change({param1: this, param2: original_state}, event_select_callback);
 	});
 
-	$( ".signout_selector ").each(function ( index ){
+	$( ".signout_selector").each(function ( index ){
 		$(this).change({param1: this}, signout_select_callback);
+	});
+
+	$(".signout_btn").each(function (index){
+		$(this).click({param1: this}, signout_btn_callback);
 	});
 
 	// retrieve event info for each student
@@ -128,6 +150,9 @@ $(document).ready(function(){
 		var sid = $(this).attr('studentid')
 		update_event_list(sid)
 	});
+
+	//setup initial counts
+	update_counts();
 
 	//set bathroom btn onclick
 	$( ".bathroom_btn" ).each(function( index ){
@@ -139,12 +164,19 @@ $(document).ready(function(){
 		$(this).click({param1: this}, absent_click_callback);
 	});
 
+	$( ".afterschool_btn" ).each(function( index ){
+		$(this).click({param1: this}, afterschool_click_callback);
+	});
+
 	var intervalID = window.setInterval(function(){
 		// retrieve event info for each student
 		$( ".event_selector" ).each(function( index ){
 			var sid = $(this).attr('studentid')
 			update_event_list(sid)
 		});
+
+		update_counts();
+
 	}, 10000);
 
 });

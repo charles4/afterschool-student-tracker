@@ -1,8 +1,24 @@
 {% extends "master.html" %}
 {% block body %}
 
-<h2>{{ student.lastname }}, {{ student.firstname }} <small>[ <a href="/student/delete/{{ student.id }}">delete</a> ]</small></h2>
-<div>grade: {{ student.grade }}</div>
+<h2>{{ student.lastname }}, {{ student.firstname }} <small>grade: {{ student.grade }} [ <a href="/student/delete/{{ student.id }}">delete</a> ]</small></h2>
+<div>
+	<form method="POST" action="/student/view/{{ student.id }}/update">
+		<div class='form-group'>
+			<label for="student_type">
+				<input name='afterschoolstudent' id='afterschoolstudent' type='checkbox' {% if student.type == "afterschool" %}checked{% endif %}>This student is part of the afterschool program.</input>
+			</label>
+		</div>
+		<div class='form-group'>
+			<label for='self_signout'>
+				<input name="self_signout" id='self_signout' type="checkbox" {% if student.selfsign == "True"%}checked{%endif%}> This child is allowed to check themself out of afterschool.
+			</label>
+		</div>
+		<div class='form-group'>
+			<button type='submit' class='btn btn-primary'>Update</button>
+		</div>
+	</form>
+</div>
 <div><a href="/student/view/{{ student.id }}/documents/add">Upload Document</a></div>
 <table class='table'>
 	<tr>
@@ -33,15 +49,15 @@
 <table class='table'>
 	<tr>
 		<th>[Event]</th>
-		<th>[Start time]</th>
-		<th>[End time]</th>
+		<th>[Time]</th>
+		<th>[Type]</th>
 		<th>[Signed out by]</th>
 	</tr>
 {% for event in events %}
 	<tr>
 		<td>{{ event.title }}</td>
-		<td>{{ event.nice_time_start }} by {{ event.start_teacher }}</td>
-		<td>{{ event.nice_time_end }} by {{ event.end_teacher }}</td>
+		<td>{{ event.nice_time}}</td>
+		<td>{{ event.type }}</td>
 		<td>{{ event.guardian }}</td>
 	</tr>
 {% endfor %}
