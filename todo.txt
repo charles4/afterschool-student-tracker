@@ -5,3 +5,5 @@ x need to mark they're in afterschool.
 x add search
 add delete files, delete events, delete guardians
 add midnight sign everyone out reset
+x update old db schema to match new one
+prevent non-afterschool kids from being signed into afterschool

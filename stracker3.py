@@ -249,6 +249,8 @@ class StudentHandler():
 
 		return len(signed_in_students)
 
+	def get_all_student_ids(self):
+		return self.db.lrange("student:list", 0, -1)
 
 class EventHandler():
 	
@@ -268,6 +270,19 @@ class EventHandler():
 
 	def get_todays_events(self, student_id):
 		eids = self.db.lrange("student:"+student_id+":events", 0, -1)
+		events = []
+		for eid in eids:
+			event = self.db.hgetall("event:"+eid)
+			if "unix_time_stamp" in event:
+				date = datetime.datetime.fromtimestamp(float(event["unix_time_stamp"]))
+				today = datetime.datetime.fromtimestamp(time.time())
+				if date.year == today.year and date.month == today.month and date.day == today.day:
+					events.append(event)
+
+		return events
+
+	def get_all_todays_events(self):
+		eids = self.db.lrange("event:list", 0, -1)
 		events = []
 		for eid in eids:
 			event = self.db.hgetall("event:"+eid)
@@ -572,6 +587,26 @@ def route_event_update():
 		return str(json.dumps(events))
 
 	return "Error"
+
+@app.route("/event/update/all", methods=['GET'])
+@requireLogin
+def route_event_update_all():
+
+	students = sh.get_all_student_ids()
+
+	return_list = []
+
+	for student_id in students:
+		events = eh.get_todays_events(student_id)
+	
+		for event in events:
+			event["student_id"] = student_id
+
+		events = sorted(events, key=lambda k: k['unix_time_stamp'])
+
+		return_list.append(events)
+
+	return str(json.dumps(return_list))
 
 @app.route("/event/bathroom", methods=['GET', 'POST'])
 @requireLogin
