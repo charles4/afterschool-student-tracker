@@ -561,13 +561,13 @@ def route_event_signin():
 
 	if request.method == "POST":
 		if 'student_id' in request.form and 'title' in request.form:
+			sid = request.form['student_id']
 			if request.form['title'] == 'Afterschool':
 				eid = eh.create_event(student_id=request.form['student_id'], event_type="ASstart", title="Afterschool", author=session['user'], ip_address=request.remote_addr)
 				db.set("student:"+sid+":signed_into_afterschool", "True")
 			else:
 				### check if student is part of afterschool prgm
 				### if they are auto sign into the afterschool first
-				sid = request.form['student_id']
 				if db.hget("student:"+sid, "type") == "afterschool" and db.get("student:"+sid+":signed_into_afterschool") == "False":
 					eid = eh.create_event(student_id=request.form['student_id'], event_type="ASstart", title="Afterschool", author=session['user'], ip_address=request.remote_addr)
 					db.set("student:"+sid+":signed_into_afterschool", "True")

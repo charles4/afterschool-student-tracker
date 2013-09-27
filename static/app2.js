@@ -36,29 +36,30 @@ function update_event_list(event_data){
 
 		/// event data is a list of events
 		data = event_data
-		sid = data[0].student_id
+		if (data.length > 0){
+			sid = data[0].student_id
 
-		/// clear existing tr's for the student
-		$("#student"+sid+" tr.event").remove()
+			/// clear existing tr's for the student
+			$("#student"+sid+" tr.event").remove()
 
-		/// add new event data
-		var table = $("#student"+sid+" tr:last")
-		for (var i in data){
-			time = convert_unix_to_local(data[i].unix_time_stamp)
-			title = data[i].title
-			type = ""
-			author = data[i].author
-			ip = data[i].ip_address
-			if (data[i].type == "start" || data[i].type == "ASstart"){
-				type = "Signed into"
-			}else{
-				type = "Signed out from"
+			/// add new event data
+			var table = $("#student"+sid+" tr:last")
+			for (var i in data){
+				time = convert_unix_to_local(data[i].unix_time_stamp)
+				title = data[i].title
+				type = ""
+				author = data[i].author
+				ip = data[i].ip_address
+				if (data[i].type == "start" || data[i].type == "ASstart"){
+					type = "Signed into"
+				}else{
+					type = "Signed out from"
+				}
+				tmp = "<tr class='event'><td>" + time + " : " + type + " " + title + " by " + author + "</td></tr>"
+				$(table).append(tmp)
+
 			}
-			tmp = "<tr class='event'><td>" + time + " : " + type + " " + title + " by " + author + "</td></tr>"
-			$(table).append(tmp)
-
 		}
-
 }
 
 function update_all_events(sids){
