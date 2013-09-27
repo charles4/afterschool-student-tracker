@@ -93,13 +93,14 @@ function update_counts(){
 }
 
 function event_select_callback(ev){
-	event_title = $(ev.data.param1).val()
-	sid = $(ev.data.param1).attr("studentid")
+	event_title = $(ev.data.param1).val();
+	sid = $(ev.data.param1).attr("studentid");
 
 	$.post("/event/signin", { title: event_title, student_id: sid })
-	.done(update_all_events)
+	.done(update_all_events);
 
-	$(ev.data.param1).val(ev.data.param2)
+	$(ev.data.param1).val(ev.data.param2);
+	$(ev.data.param1).blur();
 }
 
 function signout_select_callback(ev){
@@ -108,6 +109,8 @@ function signout_select_callback(ev){
 
 	$.post("/event/afterschoolsignout", { title: "Signout", student_id: sid, guardian: guardian })
 	.done(update_all_events)
+
+	$(ev.data.param1).blur()
 }
 
 function bathroom_click_callback(ev){

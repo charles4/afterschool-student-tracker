@@ -16,6 +16,11 @@
 		</ul>
 {% endblock %}
 
+{% block front_page_count_block %}
+            <li><a href="/status/view">Total: <span id='count_general'></span></a></li>
+            <li><a href="/status/view">Afterschool: <span id='count_afterschool'></span></a></li>
+{% endblock %}
+
 {% block body %}
 <style>
 	.recent_event { 
@@ -39,7 +44,9 @@
 			<td class='btns'>
 				<select class='event_selector' studentid="{{ student.id }}">
 					<option>Sign into:</option>
+					{% if student.type == "afterschool" %}
 					<option>Afterschool</option>
+					{% endif %}
 					{% for type in event_titles %}
 					<option>{{ type}}</option>
 					{% endfor %}

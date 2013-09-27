@@ -4,6 +4,8 @@ x change way afterschool vs normal kids are handled.
 x need to mark they're in afterschool.
 x add search
 add delete files, delete events, delete guardians
-add midnight sign everyone out reset
+x add midnight sign everyone out reset
 x update old db schema to match new one
-prevent non-afterschool kids from being signed into afterschool
+x prevent non-afterschool kids from being signed into afterschool
+x auto deselect dropdowns after sign in to avoid arrow key problems
+x add pages to view list of all signed in students (from counts)

@@ -1,0 +1,19 @@
+{% extends "master.html" %}
+{% block title %}
+	Signed In Students
+{% endblock %}
+{% block body %}
+	<legend>Students currently signed into the Afterschool Program</legend>
+	<ul>
+	{% for student in afterschoolers %}
+		<li>{{ student.lastname }}, {{ student.firstname }} ({{ student.current_event }})</li>
+	{% endfor %}
+	</ul>
+
+	<legend>Students currently signed into a club/event</legend>
+	<ul>
+	{% for student in students %}
+		<li>{{ student.lastname }}, {{ student.firstname }}  ({{ student.current_event }})</li>
+	{% endfor %}
+	</ul>
+{% endblock %}

@@ -24,8 +24,7 @@
             <li><a href="/student/create">Create Student</a></li>
             <li><a href="/event/manage">Manage Event/Clubs</a></li>
             <li><a href="/logout">Log Off</a></li>
-            <li><a href="#">Total: <span id='count_general'></span></a></li>
-            <li><a href="#">Afterschool: <span id='count_afterschool'></span></a></li>
+            {% block front_page_count_block %}{% endblock %}
             </ul>
             <form class='navbar-form navbar-right' method='GET' action='/'>
               <div class='form-group'>
