@@ -25,13 +25,13 @@ UPLOAD_FOLDER = '/srv/uploads'
 ALLOWED_EXTENSIONS = set(['txt', 'doc', 'pdf', 'png', 'jpg', 'jpeg', 'gif', 'bmp'])
 
 ### db
-db = redis.StrictRedis(host='10.1.5.12', port=6379, db=3)
+db = redis.StrictRedis(host='10.1.5.13', port=6379, db=3)
 
 app = Flask(__name__)
 app.secret_key = "W\xa8\x01\x83c\t\x06\x07p\x9c\xed\x13 \x98\x17\x0f\xf9\xbe\x18\x8a|I\xf4U"
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
-store = RedisStore(redis.StrictRedis(host='10.1.5.12', port=6379, db=1))
+store = RedisStore(redis.StrictRedis(host='10.1.5.13', port=6379, db=1))
 
 # this will replace the app's session handling
 KVSessionExtension(store, app)
