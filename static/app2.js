@@ -47,15 +47,19 @@ function update_event_list(event_data){
 			for (var i in data){
 				time = convert_unix_to_local(data[i].unix_time_stamp)
 				title = data[i].title
-				type = ""
+				phrase = ""
 				author = data[i].author
 				ip = data[i].ip_address
 				if (data[i].type == "start" || data[i].type == "ASstart"){
-					type = "Signed into"
+					phrase = "Signed into";
 				}else{
-					type = "Signed out from"
+					phrase = "Signed out from";
 				}
-				tmp = "<tr class='event'><td>" + time + " : " + type + " " + title + " by " + author + "</td></tr>"
+
+				if (data[i].title == "Absent"){
+					phrase = "Marked"
+				}
+				tmp = "<tr class='event'><td>" + time + " : " + phrase + " " + title + " by " + author + "</td></tr>"
 				$(table).append(tmp)
 
 			}

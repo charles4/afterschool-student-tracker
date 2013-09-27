@@ -73,6 +73,41 @@ document:id
 
 """
 
+
+### std functions
+
+def methodTimer(function):
+	@wraps(function)
+	def decorated_view(*args, **kwargs):
+		t = time.time()
+		result = function(*args, **kwargs)
+		print function.__name__ + " took " + str(time.time() - t) + " seconds."
+		return result
+	return decorated_view
+
+def requireLogin(fn):
+	@wraps(fn)
+	def decorated(*args, **kwargs):
+		if 'user' in session:
+			return fn(*args, **kwargs)
+		return redirect(url_for("route_login"))
+	return decorated
+
+def check_ldap_credentials(username, password, server_ip):
+	ldap_server="ldap://" + server_ip
+	con = ldap.initialize(ldap_server)
+	user = username + "@southside.edu"
+	try:
+		con.simple_bind_s(user,password)
+		con.unbind_s()
+		print "authentication successful"
+		return True
+	except ldap.LDAPError:
+		con.unbind_s()
+		print "authentication error"
+		return False
+
+
 class FileHandler():
 
 	def __init__(self, db):
@@ -202,19 +237,6 @@ class StudentHandler():
 
 		return events
 
-	def get_todays_events(self, student_id):
-		eids = self.db.lrange("student:"+student_id+":events", 0, -1)
-		events = []
-		for eid in eids:
-			event = self.db.hgetall("event:"+eid)
-			if "unix_time_stamp" in event:
-				date = datetime.datetime.fromtimestamp(float(event["unix_time_stamp"]))
-				today = datetime.datetime.fromtimestamp(time.time())
-				if date.year == today.year and date.month == today.month and date.day == today.day:
-					events.append(event)
-
-		return events
-
 	def get_files(self, student_id):
 		fids = self.db.lrange("student:"+student_id+":documents", 0, -1)
 		docs = []
@@ -268,15 +290,22 @@ class EventHandler():
 	def remove_title(self, title):
 		return self.db.lrem("event_title:list", 0, title)
 
+	#@methodTimer
 	def get_todays_events(self, student_id):
 		eids = self.db.lrange("student:"+student_id+":events", 0, -1)
 		events = []
+
+		pipe = self.db.pipeline()
 		for eid in eids:
-			event = self.db.hgetall("event:"+eid)
+			pipe.hgetall("event:"+eid)
+		raw_events = pipe.execute()
+
+		for event in raw_events:
 			if "unix_time_stamp" in event:
 				date = datetime.datetime.fromtimestamp(float(event["unix_time_stamp"]))
 				today = datetime.datetime.fromtimestamp(time.time())
 				if date.year == today.year and date.month == today.month and date.day == today.day:
+					event['student_id'] = student_id
 					events.append(event)
 
 		return events
@@ -339,29 +368,7 @@ sh = StudentHandler(db)
 eh = EventHandler(db)
 fh = FileHandler(db)
 
-### std functions
 
-def requireLogin(fn):
-	@wraps(fn)
-	def decorated(*args, **kwargs):
-		if 'user' in session:
-			return fn(*args, **kwargs)
-		return redirect(url_for("route_login"))
-	return decorated
-
-def check_ldap_credentials(username, password, server_ip):
-	ldap_server="ldap://" + server_ip
-	con = ldap.initialize(ldap_server)
-	user = username + "@southside.edu"
-	try:
-		con.simple_bind_s(user,password)
-		con.unbind_s()
-		print "authentication successful"
-		return True
-	except ldap.LDAPError:
-		con.unbind_s()
-		print "authentication error"
-		return False
 
 #### ROUTING
 
@@ -582,13 +589,14 @@ def route_event_update():
 
 	if 'student_id' in request.args:
 		sid = request.args.get("student_id")
-		events = sh.get_todays_events(student_id=sid)
+		events = eh.get_todays_events(student_id=sid)
 		events = sorted(events, key=lambda k: k['unix_time_stamp'])
 		return str(json.dumps(events))
 
 	return "Error"
 
 @app.route("/event/update/all", methods=['GET'])
+#@methodTimer
 @requireLogin
 def route_event_update_all():
 
@@ -598,12 +606,7 @@ def route_event_update_all():
 
 	for student_id in students:
 		events = eh.get_todays_events(student_id)
-	
-		for event in events:
-			event["student_id"] = student_id
-
-		events = sorted(events, key=lambda k: k['unix_time_stamp'])
-
+#		events = sorted(events, key=lambda k: k['unix_time_stamp'])
 		return_list.append(events)
 
 	return str(json.dumps(return_list))
