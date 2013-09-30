@@ -157,10 +157,12 @@ def route_login():
 		if "username" in request.form and "password" in request.form:
 			if check_ldap_credentials(request.form["username"], request.form["password"], "10.1.5.9"):
 				rfuser = request.form['username']
+				print "grabbed username: " + rfuser
 				if rfuser.lower() not in ['elemlab', 'group1', 'group2', 'group3', 'group4', 'group5']:
+                                        print "user name is acceptable."
 					session['user'] = request.form["username"]
+					print "starting return for route_default"
 					return redirect(url_for("route_default"))
-					return redirect(url_for("route_login"))
 
 	return render_template("login.html")
 
