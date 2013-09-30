@@ -1,7 +1,7 @@
 import redis
 from handlers import StudentHandler, EventHandler
 
-db = redis.StrictRedis(host='10.1.5.13', port=6379, db=3)
+db = redis.StrictRedis(host='10.1.5.13', port=6379, db=1)
 
 sh = StudentHandler(db)
 eh = EventHandler(db)
