@@ -23,6 +23,9 @@ from werkzeug import secure_filename
 
 from handlers import StudentHandler, EventHandler, FileHandler
 
+## errors
+import traceback
+
 UPLOAD_FOLDER = '/srv/uploads'
 ALLOWED_EXTENSIONS = set(['txt', 'doc', 'pdf', 'png', 'jpg', 'jpeg', 'gif', 'bmp'])
 
@@ -109,8 +112,22 @@ def check_ldap_credentials(username, password, server_ip):
 		print "authentication error"
 		return False
 
+def removeMalformed(students):
+        malformed = []
+        for student in students:
+                if "lastname" not in student:
+                        malformed.append(students.index(student))
+                elif "grade" not in student:
+                        malformed.append(students.index(student))
+                elif "id" not in student:
+                        malformed.append(students.index(student))
 
 
+                        
+        for index in malformed:
+                del students[index]
+
+        return students
 
 sh = StudentHandler(db)
 eh = EventHandler(db)
@@ -128,14 +145,21 @@ def route_default():
 	event_titles = eh.get_all_titles()
 
 	if 'grade' in request.args:
-		students = sh.get_grade(request.args.get("grade"))
+		students = removeMalformed(sh.get_all())
+
+		matches = []
+		for student in students:
+                        if student['grade'] == request.args.get("grade"):
+                                matches.append(student)
+
+                students = matches
+                
 	elif 'term' in request.args:
-		students = sh.get_all()
+		students = removeMalformed(sh.get_all())
 		matches = []
 		for student in students:
 			terms = request.args.get('term')
 			terms = terms.split(" ")
-			print terms
 
 			for term in terms:
 				if student['lastname'].lower() == term:
@@ -145,12 +169,17 @@ def route_default():
 
 		students = matches
 	else:
-		students = sh.get_all()
+		students = removeMalformed(sh.get_all())
 
-	students = sorted(students, key= lambda k:k['lastname'])
+        
+        
 
-	return render_template("mainpage.html", students=students, event_titles=event_titles)
 
+
+        students = sorted(students, key= lambda k:k['lastname'])
+
+        return render_template("mainpage.html", students=students, event_titles=event_titles)
+        
 @app.route("/login", methods=['GET', 'POST'])
 def route_login():
 	if request.method == "POST":
